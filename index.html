@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ordini Tera Naigra</title>
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ordini">
+<link rel="apple-touch-icon" href="icona-180.png">
+<link rel="icon" href="icona-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root {
+    --sfondo: #f2f2f7; --scheda: #ffffff; --testo: #1c1c1e; --secondario: #8e8e93;
+    --linea: rgba(60,60,67,.18); --campo: #f2f2f7;
+    --marrone: #7a4a26; --verde: #34c759; --arancio: #ff9500; --rosso: #ff3b30;
+    --barra: rgba(249,249,249,.88);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --sfondo: #000000; --scheda: #1c1c1e; --testo: #ffffff; --secondario: #8e8e93;
+      --linea: rgba(84,84,88,.6); --campo: #2c2c2e;
+      --marrone: #d29a6a; --verde: #30d158; --arancio: #ff9f0a; --rosso: #ff453a;
+      --barra: rgba(22,22,24,.88);
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--sfondo); color: var(--testo); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    font-size: 17px; line-height: 1.3; -webkit-font-smoothing: antialiased;
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  svg { display: block; }
+
+  /* Intestazione grande stile iOS */
+  header { padding: calc(14px + env(safe-area-inset-top)) 20px 6px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+  header h1 { font-size: 34px; font-weight: 700; letter-spacing: -.4px; margin: 0; }
+  .icona-tasto { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--marrone); }
+  .icona-tasto:active { opacity: .5; }
+
+  .riepilogo { margin: 6px 20px 2px; color: var(--secondario); font-size: 15px; }
+
+  /* Ricerca */
+  .cerca { margin: 10px 16px 6px; position: relative; }
+  .cerca input { width: 100%; border: 0; border-radius: 10px; background: rgba(118,118,128,.12); padding: 9px 12px 9px 34px; font: inherit; font-size: 17px; color: var(--testo); outline: none; }
+  .cerca svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--secondario); }
+
+  /* Totali da preparare */
+  .totali { margin: 12px 16px 0; background: var(--scheda); border-radius: 14px; padding: 12px 14px; }
+  .totali h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .3px; color: var(--secondario); font-weight: 500; margin: 0 0 8px; }
+  .totali .righe { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pillola { background: var(--campo); border-radius: 999px; padding: 5px 11px; font-size: 14px; }
+  .pillola b { font-weight: 600; }
+
+  /* Gruppi per data e schede ordine */
+  .gruppo { margin: 22px 16px 0; }
+  .gruppo > h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .3px; color: var(--secondario); font-weight: 500; margin: 0 4px 7px; }
+  .lista { background: var(--scheda); border-radius: 14px; overflow: hidden; }
+  .ordine { display: flex; align-items: center; gap: 12px; padding: 12px 14px; position: relative; }
+  .ordine + .ordine::before { content: ""; position: absolute; top: 0; left: 62px; right: 0; height: .5px; background: var(--linea); }
+  .stato { width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; transition: transform .15s; }
+  .stato:active { transform: scale(.85); }
+  .stato.da-fare { background: color-mix(in srgb, var(--arancio) 16%, transparent); color: var(--arancio); }
+  .stato.fatto { background: var(--verde); color: #fff; }
+  .corpo { flex: 1; min-width: 0; text-align: left; }
+  .corpo .cliente { font-weight: 600; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .corpo .dettaglio { color: var(--secondario); font-size: 15px; margin-top: 2px; }
+  .corpo .nota { color: var(--secondario); font-size: 14px; margin-top: 3px; font-style: italic; }
+  .kg { text-align: right; flex: none; }
+  .kg b { font-size: 17px; font-weight: 600; display: block; }
+  .kg span { font-size: 13px; color: var(--secondario); }
+  .freccia { color: var(--linea); flex: none; }
+
+  .vuoto { text-align: center; color: var(--secondario); padding: 70px 30px; }
+  .vuoto svg { margin: 0 auto 12px; opacity: .5; }
+  .vuoto p { margin: 4px 0; }
+  .vuoto strong { color: var(--testo); font-size: 20px; }
+
+  /* Barra in basso con le due schede */
+  nav { position: fixed; left: 0; right: 0; bottom: 0; background: var(--barra); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: .5px solid var(--linea); display: flex; padding: 6px 0 calc(6px + env(safe-area-inset-bottom)); z-index: 5; }
+  nav button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; color: var(--secondario); padding: 4px 0; position: relative; }
+  nav button.attiva { color: var(--marrone); }
+  .contatore { position: absolute; top: 0; left: calc(50% + 8px); background: var(--rosso); color: #fff; font-size: 12px; font-weight: 600; min-width: 18px; height: 18px; border-radius: 9px; display: grid; place-items: center; padding: 0 5px; }
+
+  .aggiungi { position: fixed; right: 20px; bottom: calc(78px + env(safe-area-inset-bottom)); width: 58px; height: 58px; border-radius: 50%; background: var(--marrone); color: #fff; display: grid; place-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.25); z-index: 6; transition: transform .15s; }
+  .aggiungi:active { transform: scale(.9); }
+
+  /* Foglio (modulo nuovo ordine) */
+  .velo { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 10; }
+  .velo.aperto { opacity: 1; pointer-events: auto; }
+  .foglio { position: fixed; left: 0; right: 0; bottom: 0; max-height: calc(100% - 40px - env(safe-area-inset-top)); background: var(--sfondo); border-radius: 14px 14px 0 0; transform: translateY(100%); transition: transform .3s cubic-bezier(.2,.8,.2,1); z-index: 11; display: flex; flex-direction: column; max-width: 640px; margin: 0 auto; }
+  .foglio.aperto { transform: none; }
+  .foglio-testa { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 10px; border-bottom: .5px solid var(--linea); }
+  .foglio-testa h2 { font-size: 17px; font-weight: 600; margin: 0; }
+  .foglio-testa button { color: var(--marrone); font-size: 17px; min-width: 70px; }
+  .foglio-testa button.salva { font-weight: 600; text-align: right; }
+  .foglio-testa button:disabled { opacity: .35; }
+  .foglio-corpo { overflow-y: auto; padding: 8px 16px calc(24px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
+  .etichetta { font-size: 13px; text-transform: uppercase; letter-spacing: .3px; color: var(--secondario); margin: 18px 4px 7px; }
+  .campo { background: var(--scheda); border-radius: 12px; overflow: hidden; }
+  .campo input, .campo textarea { width: 100%; border: 0; background: transparent; padding: 12px 14px; font: inherit; color: var(--testo); outline: none; }
+  .campo textarea { resize: none; min-height: 60px; }
+  .campo input[type=date] { -webkit-appearance: none; appearance: none; min-height: 46px; text-align: left; }
+  .suggerimenti { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .suggerimenti button { background: var(--scheda); border-radius: 999px; padding: 6px 12px; font-size: 14px; }
+
+  .riga-formato { background: var(--scheda); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .formati { display: flex; flex-wrap: wrap; gap: 6px; }
+  .formati button { background: var(--campo); border-radius: 9px; padding: 9px 12px; font-size: 15px; font-weight: 500; flex-grow: 1; }
+  .formati button.scelto { background: var(--marrone); color: #fff; }
+  .quantita { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; gap: 10px; }
+  .passo { display: flex; align-items: center; background: var(--campo); border-radius: 9px; }
+  .passo button { width: 44px; height: 38px; display: grid; place-items: center; color: var(--marrone); font-size: 22px; font-weight: 500; }
+  .passo button:active { opacity: .4; }
+  .passo input { width: 52px; text-align: center; border: 0; background: transparent; font: inherit; font-size: 18px; font-weight: 600; color: var(--testo); outline: none; }
+  .conto { text-align: right; font-size: 15px; color: var(--secondario); }
+  .conto b { color: var(--testo); font-size: 18px; }
+  .togli-riga { color: var(--rosso); font-size: 15px; margin-top: 10px; }
+  .tasto-pieno { width: 100%; background: var(--scheda); border-radius: 12px; padding: 13px; color: var(--marrone); font-weight: 500; text-align: center; }
+  .tasto-pieno.rosso { color: var(--rosso); }
+  .totale-modulo { text-align: center; color: var(--secondario); margin: 14px 0 0; font-size: 15px; }
+  .totale-modulo b { color: var(--testo); }
+  .spiega { color: var(--secondario); font-size: 14px; margin: 8px 4px 0; }
+
+  /* Avviso breve */
+  .avviso { position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px); background: rgba(30,30,30,.92); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 15px; opacity: 0; pointer-events: none; transition: all .25s; z-index: 20; white-space: nowrap; }
+  .avviso.visibile { opacity: 1; transform: translateX(-50%); }
+  .avviso button { color: #ffd60a; font-weight: 600; margin-left: 10px; pointer-events: auto; }
+
+  /* Guida per installare su iPhone */
+  .installa { margin: 12px 16px 0; background: var(--scheda); border-radius: 14px; padding: 12px 14px; font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+  .installa p { margin: 0; flex: 1; }
+  .installa .chiudi { color: var(--secondario); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="titolo">Da fare</h1>
+  <button class="icona-tasto" id="apriImpostazioni" aria-label="Copia di sicurezza">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+  </button>
+</header>
+<div class="riepilogo" id="riepilogo"></div>
+
+<div class="installa" id="guidaInstalla" hidden>
+  <p>Per averla come app: tocca <b>Condividi</b> <svg style="display:inline;vertical-align:-3px" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M8 7l4-4 4 4M5 12v8h14v-8"/></svg> in basso, poi <b>Aggiungi alla schermata Home</b>.</p>
+  <button class="chiudi" id="chiudiGuida" aria-label="Chiudi">✕</button>
+</div>
+
+<div class="cerca">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+  <input id="cerca" type="search" placeholder="Cerca cliente o formato" autocomplete="off">
+</div>
+
+<div class="totali" id="totali" hidden>
+  <h2>Da preparare</h2>
+  <div class="righe" id="totaliRighe"></div>
+</div>
+
+<main id="elenco"></main>
+
+<button class="aggiungi" id="nuovo" aria-label="Nuovo ordine">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<nav>
+  <button id="schedaDaFare" class="attiva">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12M6 22h12M7 2c0 5 5 6 5 10s-5 5-5 10M17 2c0 5-5 6-5 10s5 5 5 10"/></svg>
+    Da fare
+    <span class="contatore" id="contaDaFare" hidden></span>
+  </button>
+  <button id="schedaFatti">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>
+    Fatti
+  </button>
+</nav>
+
+<div class="velo" id="velo"></div>
+
+<!-- Modulo ordine -->
+<section class="foglio" id="foglioOrdine" aria-modal="true" role="dialog">
+  <div class="foglio-testa">
+    <button id="annulla">Annulla</button>
+    <h2 id="titoloModulo">Nuovo ordine</h2>
+    <button class="salva" id="salva">Salva</button>
+  </div>
+  <div class="foglio-corpo">
+    <div class="etichetta">Cliente</div>
+    <div class="campo"><input id="cliente" type="text" placeholder="Nome del cliente" autocomplete="off" autocapitalize="words"></div>
+    <div class="suggerimenti" id="suggerimenti"></div>
+
+    <div class="etichetta">Data dell'ordine</div>
+    <div class="campo"><input id="data" type="date"></div>
+
+    <div class="etichetta">Pasta (pacchi da 500 g)</div>
+    <div id="righe"></div>
+    <button class="tasto-pieno" id="aggiungiRiga">+ Aggiungi un altro formato</button>
+    <p class="totale-modulo" id="totaleModulo"></p>
+
+    <div class="etichetta">Note (facoltative)</div>
+    <div class="campo"><textarea id="note" placeholder="Es. consegna sabato, ritira al mercato…"></textarea></div>
+
+    <div id="zonaElimina" hidden>
+      <div class="etichetta">&nbsp;</div>
+      <button class="tasto-pieno rosso" id="elimina">Elimina ordine</button>
+    </div>
+  </div>
+</section>
+
+<!-- Copia di sicurezza -->
+<section class="foglio" id="foglioImpostazioni" aria-modal="true" role="dialog">
+  <div class="foglio-testa">
+    <span style="min-width:70px"></span>
+    <h2>Copia di sicurezza</h2>
+    <button class="salva" id="chiudiImpostazioni">Fine</button>
+  </div>
+  <div class="foglio-corpo">
+    <p class="spiega">Gli ordini sono salvati solo su questo telefono. Ogni tanto fai una copia: se cambi telefono o cancelli i dati di Safari, la recuperi da qui.</p>
+    <div class="etichetta">&nbsp;</div>
+    <button class="tasto-pieno" id="esporta">Salva una copia degli ordini</button>
+    <div class="etichetta">&nbsp;</div>
+    <button class="tasto-pieno" id="importa">Recupera ordini da una copia</button>
+    <input type="file" id="fileImporta" accept=".json,application/json" hidden>
+    <p class="spiega" id="infoCopia"></p>
+  </div>
+</section>
+
+<div class="avviso" id="avviso"><span id="testoAvviso"></span><button id="annullaAvviso" hidden>Annulla</button></div>
+
+<script>
+const FORMATI = ['Chicche','Fusilli','Maccheroncini','Penne','Spaghettoni','Tagliolini','Torchietti','Torciglioni'];
+const CHIAVE = 'ordini-tera-naigra';
+const KG_PACCO = 0.5;
+
+const $ = id => document.getElementById(id);
+let ordini = carica();
+let scheda = 'dafare';
+let inModifica = null;   // id dell'ordine aperto nel modulo
+let righeModulo = [];    // [{formato, pacchi}]
+
+function carica() {
+  try { return JSON.parse(localStorage.getItem(CHIAVE)) || []; } catch { return []; }
+}
+function salvaTutto() {
+  try { localStorage.setItem(CHIAVE, JSON.stringify(ordini)); } catch { mostraAvviso('Spazio pieno: impossibile salvare'); }
+}
+const nuovoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const oggi = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const kg = n => (n * KG_PACCO).toLocaleString('it-IT', { maximumFractionDigits: 1 }) + ' kg';
+const pacchi = n => n + (n === 1 ? ' pacco' : ' pacchi');
+const totPacchi = o => o.righe.reduce((s, r) => s + r.pacchi, 0);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function nomeData(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  const t = oggi();
+  const ieri = new Date(t + 'T12:00:00'); ieri.setDate(ieri.getDate() - 1);
+  if (iso === t) return 'Oggi';
+  if (iso === ieri.toISOString().slice(0, 10)) return 'Ieri';
+  const testo = d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
+  return testo.charAt(0).toUpperCase() + testo.slice(1);
+}
+
+const ICONA_CLESSIDRA = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12M6 22h12M7 2c0 5 5 6 5 10s-5 5-5 10M17 2c0 5-5 6-5 10s5 5 5 10"/></svg>';
+const ICONA_SPUNTA = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const ICONA_FRECCIA = '<svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg>';
+
+function disegna() {
+  const fatti = scheda === 'fatti';
+  $('titolo').textContent = fatti ? 'Fatti' : 'Da fare';
+  $('schedaDaFare').classList.toggle('attiva', !fatti);
+  $('schedaFatti').classList.toggle('attiva', fatti);
+
+  const daFare = ordini.filter(o => !o.fatto);
+  $('contaDaFare').hidden = daFare.length === 0;
+  $('contaDaFare').textContent = daFare.length;
+
+  const q = $('cerca').value.trim().toLowerCase();
+  let lista = ordini.filter(o => !!o.fatto === fatti);
+  if (q) lista = lista.filter(o => o.cliente.toLowerCase().includes(q) || o.righe.some(r => r.formato.toLowerCase().includes(q)) || (o.note || '').toLowerCase().includes(q));
+
+  // Da fare: dal più vecchio (prima chi aspetta da più tempo). Fatti: dal più recente.
+  lista.sort((a, b) => fatti ? (b.data.localeCompare(a.data) || (b.fattoIl || 0) - (a.fattoIl || 0)) : (a.data.localeCompare(b.data) || a.creato - b.creato));
+
+  const tp = lista.reduce((s, o) => s + totPacchi(o), 0);
+  $('riepilogo').textContent = lista.length ? `${lista.length} ${lista.length === 1 ? 'ordine' : 'ordini'} · ${pacchi(tp)} · ${kg(tp)}` : '';
+
+  // Totali per formato (solo "Da fare")
+  if (!fatti && lista.length) {
+    const somme = {};
+    lista.forEach(o => o.righe.forEach(r => somme[r.formato] = (somme[r.formato] || 0) + r.pacchi));
+    $('totaliRighe').innerHTML = FORMATI.filter(f => somme[f]).map(f => `<span class="pillola">${f} <b>${somme[f]}</b> · ${kg(somme[f])}</span>`).join('');
+    $('totali').hidden = false;
+  } else $('totali').hidden = true;
+
+  if (!lista.length) {
+    $('elenco').innerHTML = `<div class="vuoto">${fatti ? ICONA_SPUNTA.replace(/20/g, '48') : ICONA_CLESSIDRA.replace(/20/g, '48')}
+      <p><strong>${q ? 'Nessun risultato' : fatti ? 'Nessun ordine fatto' : 'Nessun ordine da fare'}</strong></p>
+      <p>${q ? 'Prova con un altro nome.' : fatti ? 'Quando tocchi la clessidra di un ordine, finisce qui.' : 'Tocca + per segnare un nuovo ordine.'}</p></div>`;
+    return;
+  }
+
+  const gruppi = [];
+  lista.forEach(o => { const g = gruppi.at(-1); if (g && g.data === o.data) g.ordini.push(o); else gruppi.push({ data: o.data, ordini: [o] }); });
+
+  $('elenco').innerHTML = gruppi.map(g => `<section class="gruppo"><h3>${nomeData(g.data)}</h3><div class="lista">${g.ordini.map(o => {
+    const n = totPacchi(o);
+    return `<div class="ordine">
+      <button class="stato ${o.fatto ? 'fatto' : 'da-fare'}" data-stato="${o.id}" aria-label="${o.fatto ? 'Rimetti da fare' : 'Segna come fatto'}">${o.fatto ? ICONA_SPUNTA : ICONA_CLESSIDRA}</button>
+      <button class="corpo" data-apri="${o.id}">
+        <div class="cliente">${esc(o.cliente)}</div>
+        <div class="dettaglio">${o.righe.map(r => `${r.formato} ×${r.pacchi}`).join(' · ')}</div>
+        ${o.note ? `<div class="nota">${esc(o.note)}</div>` : ''}
+      </button>
+      <div class="kg"><b>${kg(n)}</b><span>${pacchi(n)}</span></div>
+      <span class="freccia">${ICONA_FRECCIA}</span>
+    </div>`;
+  }).join('')}</div></section>`).join('');
+}
+
+// ---- Cambia stato con la spunta / clessidra ----
+let annullaUltimo = null;
+$('elenco').addEventListener('click', e => {
+  const s = e.target.closest('[data-stato]');
+  if (s) {
+    const o = ordini.find(x => x.id === s.dataset.stato);
+    const prima = { fatto: o.fatto, fattoIl: o.fattoIl };
+    o.fatto = !o.fatto; o.fattoIl = o.fatto ? Date.now() : null;
+    salvaTutto();
+    if (navigator.vibrate) navigator.vibrate(15);
+    s.closest('.ordine').style.transition = 'opacity .25s';
+    s.closest('.ordine').style.opacity = '0';
+    setTimeout(disegna, 220);
+    annullaUltimo = () => { Object.assign(o, prima); salvaTutto(); disegna(); };
+    mostraAvviso(o.fatto ? `${o.cliente}: fatto ✓` : `${o.cliente}: di nuovo da fare`, true);
+    return;
+  }
+  const a = e.target.closest('[data-apri]');
+  if (a) apriModulo(ordini.find(x => x.id === a.dataset.apri));
+});
+
+let timerAvviso;
+function mostraAvviso(testo, conAnnulla = false) {
+  $('testoAvviso').textContent = testo;
+  $('annullaAvviso').hidden = !conAnnulla;
+  $('avviso').classList.add('visibile');
+  clearTimeout(timerAvviso);
+  timerAvviso = setTimeout(() => { $('avviso').classList.remove('visibile'); annullaUltimo = null; }, 3500);
+}
+$('annullaAvviso').onclick = () => { if (annullaUltimo) annullaUltimo(); annullaUltimo = null; $('avviso').classList.remove('visibile'); };
+
+// ---- Schede ----
+$('schedaDaFare').onclick = () => { scheda = 'dafare'; disegna(); scrollTo(0, 0); };
+$('schedaFatti').onclick = () => { scheda = 'fatti'; disegna(); scrollTo(0, 0); };
+$('cerca').oninput = disegna;
+
+// ---- Modulo ordine ----
+function apriFoglio(id) { $('velo').classList.add('aperto'); $(id).classList.add('aperto'); }
+function chiudiFogli() { $('velo').classList.remove('aperto'); document.querySelectorAll('.foglio').forEach(f => f.classList.remove('aperto')); document.activeElement.blur(); }
+$('velo').onclick = chiudiFogli;
+$('annulla').onclick = chiudiFogli;
+
+function apriModulo(o) {
+  inModifica = o ? o.id : null;
+  $('titoloModulo').textContent = o ? 'Modifica ordine' : 'Nuovo ordine';
+  $('cliente').value = o ? o.cliente : '';
+  $('data').value = o ? o.data : oggi();
+  $('note').value = o ? (o.note || '') : '';
+  righeModulo = o ? o.righe.map(r => ({ ...r })) : [{ formato: null, pacchi: 1 }];
+  $('zonaElimina').hidden = !o;
+  disegnaRighe(); disegnaSuggerimenti(); controllaModulo();
+  $('foglioOrdine').querySelector('.foglio-corpo').scrollTop = 0;
+  apriFoglio('foglioOrdine');
+}
+$('nuovo').onclick = () => apriModulo(null);
+
+function disegnaRighe() {
+  $('righe').innerHTML = righeModulo.map((r, i) => `<div class="riga-formato">
+    <div class="formati">${FORMATI.map(f => `<button data-riga="${i}" data-formato="${f}" class="${r.formato === f ? 'scelto' : ''}">${f}</button>`).join('')}</div>
+    <div class="quantita">
+      <div class="passo">
+        <button data-riga="${i}" data-piu="-1" aria-label="Meno">−</button>
+        <input data-riga="${i}" class="numero" type="number" inputmode="numeric" min="1" value="${r.pacchi}" aria-label="Numero pacchi">
+        <button data-riga="${i}" data-piu="1" aria-label="Più">+</button>
+      </div>
+      <div class="conto">${pacchi(r.pacchi)} = <b>${kg(r.pacchi)}</b></div>
+    </div>
+    ${righeModulo.length > 1 ? `<button class="togli-riga" data-togli="${i}">Togli questo formato</button>` : ''}
+  </div>`).join('');
+  const t = righeModulo.reduce((s, r) => s + r.pacchi, 0);
+  $('totaleModulo').innerHTML = righeModulo.length > 1 ? `Totale ordine: <b>${pacchi(t)} · ${kg(t)}</b>` : '';
+}
+
+$('righe').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const i = +b.dataset.riga;
+  if (b.dataset.formato) { righeModulo[i].formato = b.dataset.formato; }
+  else if (b.dataset.piu) { righeModulo[i].pacchi = Math.max(1, righeModulo[i].pacchi + +b.dataset.piu); }
+  else if (b.dataset.togli !== undefined) { righeModulo.splice(+b.dataset.togli, 1); }
+  else return;
+  disegnaRighe(); controllaModulo();
+});
+$('righe').addEventListener('change', e => {
+  if (!e.target.classList.contains('numero')) return;
+  const n = Math.max(1, Math.round(+e.target.value) || 1);
+  righeModulo[+e.target.dataset.riga].pacchi = n;
+  setTimeout(() => { disegnaRighe(); controllaModulo(); }, 0);
+});
+$('aggiungiRiga').onclick = () => { righeModulo.push({ formato: null, pacchi: 1 }); disegnaRighe(); controllaModulo(); };
+
+function disegnaSuggerimenti() {
+  const q = $('cliente').value.trim().toLowerCase();
+  const nomi = [...new Set(ordini.slice().sort((a, b) => b.creato - a.creato).map(o => o.cliente))];
+  const scelti = nomi.filter(n => q ? n.toLowerCase().includes(q) && n.toLowerCase() !== q : true).slice(0, 6);
+  $('suggerimenti').innerHTML = scelti.map(n => `<button data-nome="${esc(n)}">${esc(n)}</button>`).join('');
+}
+$('suggerimenti').onclick = e => { const b = e.target.closest('[data-nome]'); if (b) { $('cliente').value = b.dataset.nome; disegnaSuggerimenti(); controllaModulo(); } };
+$('cliente').oninput = () => { disegnaSuggerimenti(); controllaModulo(); };
+
+function controllaModulo() {
+  $('salva').disabled = !$('cliente').value.trim() || righeModulo.some(r => !r.formato);
+}
+
+$('salva').onclick = () => {
+  const dati = {
+    cliente: $('cliente').value.trim(),
+    data: $('data').value || oggi(),
+    righe: righeModulo.map(r => ({ formato: r.formato, pacchi: r.pacchi })),
+    note: $('note').value.trim(),
+  };
+  if (inModifica) Object.assign(ordini.find(o => o.id === inModifica), dati);
+  else ordini.push({ id: nuovoId(), creato: Date.now(), fatto: false, fattoIl: null, ...dati });
+  salvaTutto(); chiudiFogli();
+  if (!inModifica && scheda === 'fatti') scheda = 'dafare';
+  disegna();
+  mostraAvviso(inModifica ? 'Ordine aggiornato' : 'Ordine salvato');
+};
+
+$('elimina').onclick = () => {
+  const o = ordini.find(x => x.id === inModifica);
+  if (!confirm(`Eliminare l'ordine di ${o.cliente}?`)) return;
+  const pos = ordini.indexOf(o);
+  ordini.splice(pos, 1); salvaTutto(); chiudiFogli(); disegna();
+  annullaUltimo = () => { ordini.splice(pos, 0, o); salvaTutto(); disegna(); };
+  mostraAvviso('Ordine eliminato', true);
+};
+
+// ---- Copia di sicurezza ----
+$('apriImpostazioni').onclick = () => {
+  let ultima = null; try { ultima = localStorage.getItem(CHIAVE + '-copia'); } catch {}
+  $('infoCopia').textContent = `Ordini salvati: ${ordini.length}.` + (ultima ? ` Ultima copia: ${new Date(+ultima).toLocaleDateString('it-IT')}.` : ' Nessuna copia fatta finora.');
+  apriFoglio('foglioImpostazioni');
+};
+$('chiudiImpostazioni').onclick = chiudiFogli;
+
+$('esporta').onclick = async () => {
+  const nome = `ordini-tera-naigra-${oggi()}.json`;
+  const file = new File([JSON.stringify({ app: 'ordini-tera-naigra', versione: 1, salvato: new Date().toISOString(), ordini }, null, 1)], nome, { type: 'application/json' });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'Copia ordini' });
+    else { const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+    try { localStorage.setItem(CHIAVE + '-copia', Date.now()); } catch {}
+    mostraAvviso('Copia pronta');
+  } catch (e) { if (e.name !== 'AbortError') mostraAvviso('Copia non riuscita'); }
+};
+$('importa').onclick = () => $('fileImporta').click();
+$('fileImporta').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const dati = JSON.parse(await f.text());
+    const arrivati = Array.isArray(dati) ? dati : dati.ordini;
+    if (!Array.isArray(arrivati)) throw new Error();
+    const presenti = new Set(ordini.map(o => o.id));
+    const nuovi = arrivati.filter(o => o && o.id && o.cliente && Array.isArray(o.righe) && !presenti.has(o.id));
+    ordini.push(...nuovi); salvaTutto(); chiudiFogli(); disegna();
+    mostraAvviso(nuovi.length ? `Recuperati ${nuovi.length} ordini` : 'Nessun ordine nuovo nella copia');
+  } catch { mostraAvviso('File non valido'); }
+};
+
+// ---- Guida "Aggiungi a Home" (solo iPhone, solo se non è già installata) ----
+const installata = window.navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+const iPhone = /iphone|ipad|ipod/i.test(navigator.userAgent);
+let guidaChiusa = false; try { guidaChiusa = localStorage.getItem(CHIAVE + '-guida') === '1'; } catch {}
+$('guidaInstalla').hidden = !(iPhone && !installata && !guidaChiusa);
+$('chiudiGuida').onclick = () => { $('guidaInstalla').hidden = true; try { localStorage.setItem(CHIAVE + '-guida', '1'); } catch {} };
+
+// Chiede al telefono di non cancellare i dati da solo
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+// Funziona anche senza internet
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+
+disegna();
+</script>
+</body>
+</html>
